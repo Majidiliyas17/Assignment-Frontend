@@ -45,7 +45,7 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapsed }: Sidebar
           <Link
             href="/files"
             onClick={onClose}
-            className={cn('flex min-w-0 items-center gap-2.5', collapsed && 'lg:flex-1 lg:justify-center lg:px-0')}
+            className={cn('flex min-w-0 items-center gap-2.5', collapsed && 'lg:hidden')}
           >
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 shadow-glow">
               <ShieldCheck className="h-5 w-5 text-white" />
@@ -55,8 +55,27 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapsed }: Sidebar
 
           <button
             type="button"
+            onClick={onToggleCollapsed}
+            className={cn(
+              'hidden items-center gap-2 rounded-lg text-sidebar-muted transition-colors hover:bg-white/10 hover:text-white',
+              collapsed ? 'lg:flex lg:flex-1 lg:justify-center lg:p-1.5' : 'lg:inline-flex lg:px-2 lg:py-1.5',
+            )}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? (
+              <PanelLeftOpen className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <>
+                <PanelLeftClose className="h-4 w-4" aria-hidden="true" />
+                <span className="text-xs">Collapse</span>
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
             onClick={onClose}
-            className="rounded-md p-1.5 text-sidebar-muted transition-colors hover:bg-white/10 hover:text-white lg:hidden"
+            className="ml-auto rounded-md p-1.5 text-sidebar-muted transition-colors hover:bg-white/10 hover:text-white lg:hidden"
             aria-label="Close navigation menu"
           >
             <X className="h-5 w-5" />
