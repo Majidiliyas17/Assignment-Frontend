@@ -267,7 +267,7 @@ The public share button downloads via `GET /api/share/<token>/download` (no auth
 
 - The dev server and production build **share `.next`** — don't run them at the same time (see [Getting started](#getting-started)).
 - `next lint` is deprecated in this Next version; use `npm run build` or `npx tsc --noEmit` to validate.
-- Upload rules live in `lib/format.ts`: max **500 MB** per file, allowlist of ~16 extensions (`jpg jpeg png webp pdf doc docx xls xlsx ppt pptx txt csv zip mp4`), and a deny-list of dangerous executable/script types.
+- Upload rules live in `lib/format.ts`: max **100 MB** per file, allowlist of ~16 extensions (`jpg jpeg png webp pdf doc docx xls xlsx ppt pptx txt csv zip mp4`), and a deny-list of dangerous executable/script types.
 - The `.gitignore` excludes `.next`, `node_modules`, and local env files. Secrets are never committed.
 - Backend must be reachable at `BACKEND_URL` for auth, files, sharing, uploads, and downloads to function.
 ```

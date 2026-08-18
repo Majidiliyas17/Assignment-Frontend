@@ -60,8 +60,8 @@ const DANGEROUS_EXTENSIONS = [
   'jar', 'vbs', 'ps1', 'wsf', 'cgi', 'pl', 'py', 'html', 'htm', 'svg', 'js', 'mjs',
 ];
 
-export const MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024;
-export const MAX_FILE_SIZE_MB = 500;
+export const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024;
+export const MAX_FILE_SIZE_MB = 100;
 
 export function getExtension(filename: string): string {
   const dot = filename.lastIndexOf('.');
