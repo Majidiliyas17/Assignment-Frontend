@@ -46,6 +46,9 @@ export function useFileStats(enabled = true) {
       };
     },
     staleTime: 60_000,
+    // Keep the dashboard summary in sync with changes made in another tab too.
+    refetchInterval: 15_000,
+    refetchIntervalInBackground: false,
     enabled,
   });
 }
@@ -90,6 +93,7 @@ export function useRenameFile() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] });
+      queryClient.invalidateQueries({ queryKey: ['file-stats'] });
     },
   });
 }
@@ -146,6 +150,7 @@ export function useCreateShare() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] });
+      queryClient.invalidateQueries({ queryKey: ['file-stats'] });
     },
   });
 }
@@ -159,6 +164,7 @@ export function useRevokeShare() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] });
+      queryClient.invalidateQueries({ queryKey: ['file-stats'] });
     },
   });
 }

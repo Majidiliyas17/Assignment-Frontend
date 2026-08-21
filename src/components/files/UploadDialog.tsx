@@ -33,6 +33,7 @@ export function UploadDialog() {
   const inputRef = useRef<HTMLInputElement>(null);
   const running = useRef(false);
   const activeUploadId = useRef<string | null>(null);
+  const completionNotified = useRef(false);
 
   const storage = useStorageUsage();
   const storageFull = storage.data
@@ -53,6 +54,7 @@ export function UploadDialog() {
       setRejected([]);
       running.current = false;
       activeUploadId.current = null;
+      completionNotified.current = false;
     }
   }, [open]);
 
@@ -60,7 +62,8 @@ export function UploadDialog() {
     if (running.current) return;
     const queued = items.find((item) => item.status === 'queued');
     if (!queued) {
-      if (items.length > 0 && items.every((item) => item.status === 'done' || item.status === 'error')) {
+      if (!completionNotified.current && items.length > 0 && items.every((item) => item.status === 'done' || item.status === 'error')) {
+        completionNotified.current = true;
         const succeeded = items.filter((item) => item.status === 'done').length;
         const failed = items.length - succeeded;
         if (succeeded > 0) toast.success(`${succeeded} file${succeeded > 1 ? 's' : ''} uploaded`);
@@ -130,6 +133,7 @@ export function UploadDialog() {
       setRejected((current) => [...current, ...errors]);
     }
     if (accepted.length > 0) {
+      completionNotified.current = false;
       setItems((current) => [
         ...current,
         ...accepted.map((file) => ({

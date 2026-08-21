@@ -42,7 +42,7 @@ export function UserMenu({ collapsed = false }: { collapsed?: boolean }) {
                 {initials}
               </span>
               <span className={cn('min-w-0 flex-1 text-left', collapsed && 'lg:hidden')}>
-                <span className="block truncate text-sm font-medium text-white">{user.name}</span>
+                <span className="block truncate text-sm font-medium text-sidebar-text">{user.name}</span>
                 <span className="block truncate text-xs text-sidebar-muted">{user.email}</span>
               </span>
               <ChevronsUpDown className={cn('h-4 w-4 shrink-0 text-sidebar-muted', collapsed && 'lg:hidden')} aria-hidden="true" />
