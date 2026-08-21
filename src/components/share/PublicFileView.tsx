@@ -85,10 +85,6 @@ export function PublicFileView({ file, downloadUrl, previewUrl }: PublicFileView
               </p>
             </div>
           </div>
-
-          <p className="mt-8 text-center text-sm text-content-muted">
-            Powered by <span className="font-medium text-content">SecureFiles</span> — private file storage.
-          </p>
         </div>
       </main>
       {fullScreenPreview && (
