@@ -1,5 +1,5 @@
 import { http } from './http';
-import type { FileView, PaginatedFiles, ShareResult } from '@/types/api';
+import type { FileView, PaginatedFiles, ShareResult, StorageUsage } from '@/types/api';
 
 export interface ListFilesParams {
   page?: number;
@@ -11,6 +11,8 @@ export const filesApi = {
     http
       .get<{ data: PaginatedFiles }>('/files', { params: { page: 1, limit: 20, ...params } })
       .then((r) => r.data.data),
+
+  usage: () => http.get<{ data: StorageUsage }>('/files/usage').then((r) => r.data.data),
 
   get: (id: string) => http.get<{ data: FileView }>(`/files/${id}`).then((r) => r.data.data),
 

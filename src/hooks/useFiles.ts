@@ -7,6 +7,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { filesApi } from '@/lib/files-api';
+import { refreshStorageUsage } from '@/hooks/useAuth';
 import type { FileView, PaginatedFiles } from '@/types/api';
 
 export function useFiles(page: number, limit: number) {
@@ -23,7 +24,7 @@ export interface FileStats {
   totalSize: number;
 }
 
-export function useFileStats() {
+export function useFileStats(enabled = true) {
   return useQuery({
     queryKey: ['file-stats'],
     queryFn: async (): Promise<FileStats> => {
@@ -45,6 +46,7 @@ export function useFileStats() {
       };
     },
     staleTime: 60_000,
+    enabled,
   });
 }
 
@@ -115,6 +117,7 @@ export function useRemoveFile() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] });
       queryClient.invalidateQueries({ queryKey: ['file-stats'] });
+      refreshStorageUsage(queryClient);
     },
   });
 }

@@ -6,8 +6,9 @@ import { Check, FilePlus2, FileWarning, Trash2, UploadCloud, X } from 'lucide-re
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { useUpload } from '@/hooks/useUpload';
+import { useStorageUsage } from '@/hooks/useAuth';
 import { extractApiError } from '@/lib/http';
-import { getAcceptAttribute, MAX_FILE_SIZE_MB, validateUpload } from '@/lib/format';
+import { formatBytes, getAcceptAttribute, MAX_FILE_SIZE_MB, validateUpload } from '@/lib/format';
 import { useUiStore } from '@/stores/ui';
 import { cn } from '@/lib/utils';
 
@@ -32,6 +33,11 @@ export function UploadDialog() {
   const inputRef = useRef<HTMLInputElement>(null);
   const running = useRef(false);
   const activeUploadId = useRef<string | null>(null);
+
+  const storage = useStorageUsage();
+  const storageFull = storage.data
+    ? storage.data.remainingBytes <= 0 || storage.data.percentUsed >= 100
+    : false;
 
   const upload = useUpload((percent) => {
     if (activeUploadId.current) {
@@ -76,9 +82,14 @@ export function UploadDialog() {
         );
       })
       .catch((err) => {
+        const apiError = extractApiError(err);
+        const message =
+          apiError.code === 'STORAGE_QUOTA_EXCEEDED'
+            ? `Quota exceeded — "${queued.file.name}" not uploaded.`
+            : apiError.message;
         setItems((current) =>
           current.map((item) =>
-            item.id === queued.id ? { ...item, status: 'error', error: extractApiError(err).message } : item,
+            item.id === queued.id ? { ...item, status: 'error', error: message } : item,
           ),
         );
       })
@@ -92,12 +103,24 @@ export function UploadDialog() {
     const incoming = Array.from(fileList);
     if (incoming.length === 0) return;
 
+    if (storageFull) {
+      setRejected((current) => [...current, 'Storage full — delete files to upload more']);
+      return;
+    }
+
     const accepted: File[] = [];
     const errors: string[] = [];
+    const remainingBytes = storage.data?.remainingBytes;
     for (const file of incoming) {
       const result = validateUpload(file);
       if (result.valid) {
-        accepted.push(file);
+        if (remainingBytes !== undefined && file.size > remainingBytes) {
+          errors.push(
+            `"${file.name}" not uploaded — not enough storage. Only ${formatBytes(remainingBytes)} left.`,
+          );
+        } else {
+          accepted.push(file);
+        }
       } else if (result.error) {
         errors.push(result.error);
       }
@@ -150,13 +173,17 @@ export function UploadDialog() {
         <div
           role="button"
           tabIndex={0}
-          onClick={() => inputRef.current?.click()}
+          onClick={() => {
+            if (!storageFull) inputRef.current?.click();
+          }}
           onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') inputRef.current?.click();
+            if (!storageFull && (event.key === 'Enter' || event.key === ' ')) inputRef.current?.click();
           }}
           onDragOver={(event) => {
-            event.preventDefault();
-            setDragging(true);
+            if (!storageFull) {
+              event.preventDefault();
+              setDragging(true);
+            }
           }}
           onDragLeave={() => setDragging(false)}
           onDrop={(event) => {
@@ -164,20 +191,36 @@ export function UploadDialog() {
             setDragging(false);
             addFiles(event.dataTransfer.files);
           }}
+          aria-disabled={storageFull}
           className={cn(
-            'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors',
-            dragging ? 'border-primary bg-primary-soft' : 'border-zinc-300 bg-zinc-50 hover:border-primary-hover hover:bg-primary-soft',
+            'flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors',
+            storageFull
+              ? 'cursor-not-allowed border-zinc-200 bg-zinc-50 opacity-60'
+              : dragging
+                ? 'border-primary bg-primary-soft'
+                : 'cursor-pointer border-zinc-300 bg-zinc-50 hover:border-primary-hover hover:bg-primary-soft',
           )}
         >
-          <UploadCloud className="h-8 w-8 text-primary" aria-hidden="true" />
-          <p className="text-sm font-medium text-content">Drag &amp; drop files here</p>
-          <p className="text-xs text-content-muted">or click to browse your device</p>
+          {storageFull ? (
+            <>
+              <FileWarning className="h-8 w-8 text-warning" aria-hidden="true" />
+              <p className="text-sm font-medium text-content">Storage is full</p>
+              <p className="text-xs text-content-muted">Delete files to free up space before uploading.</p>
+            </>
+          ) : (
+            <>
+              <UploadCloud className="h-8 w-8 text-primary" aria-hidden="true" />
+              <p className="text-sm font-medium text-content">Drag &amp; drop files here</p>
+              <p className="text-xs text-content-muted">or click to browse your device</p>
+            </>
+          )}
         </div>
         <input
           ref={inputRef}
           type="file"
           multiple
           accept={getAcceptAttribute()}
+          disabled={storageFull}
           className="sr-only"
           onChange={(event) => {
             if (event.target.files) addFiles(event.target.files);

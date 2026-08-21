@@ -13,17 +13,24 @@ export interface ApiClientError {
   message: string;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
 export function extractApiError(err: unknown): ApiClientError {
   if (axios.isAxiosError(err)) {
     const status = err.response?.status;
-    const body = err.response?.data as ApiBody<unknown> | undefined;
+    const body = err.response?.data as unknown;
+    const apiBody = isRecord(body) ? (body as unknown as ApiBody<unknown>) : undefined;
     const network = !err.response && err.code === 'ERR_NETWORK';
     return {
       status,
-      code: body && 'error' in body ? body.error.code : 'ERR_NETWORK',
+      code: apiBody && 'error' in apiBody ? apiBody.error.code : status === 503 ? 'SERVICE_UNAVAILABLE' : 'ERR_NETWORK',
       message:
-        body && 'message' in body && body.message
-          ? body.message
+        apiBody && 'message' in apiBody && apiBody.message
+          ? apiBody.message
+          : status === 503
+            ? 'The server is temporarily unavailable. Please try again in a moment.'
           : network
             ? 'Cannot reach the server. Please check your connection.'
             : 'Something went wrong. Please try again.',

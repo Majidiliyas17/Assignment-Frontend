@@ -1,5 +1,6 @@
 export type {
   SafeUser,
+  StorageUsage,
   AuthResult,
   FileVisibility,
   FileStatus,

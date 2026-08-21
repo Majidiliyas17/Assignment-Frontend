@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { toast } from 'sonner';
-import { FolderOpen, Globe2, Inbox, Lock, TriangleAlert, UploadCloud } from 'lucide-react';
+import { ArrowUpRight, FolderOpen, Globe2, HardDrive, Inbox, Lock, TriangleAlert, UploadCloud } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -16,6 +17,7 @@ import { RenameDialog } from '@/components/files/RenameDialog';
 import { ShareDialog } from '@/components/files/ShareDialog';
 import { extractApiError } from '@/lib/http';
 import { useFileStats, useFiles, useRemoveFile, useSetVisibility } from '@/hooks/useFiles';
+import { useStorageUsage } from '@/hooks/useAuth';
 import { useUiStore } from '@/stores/ui';
 import { formatBytes } from '@/lib/format';
 import type { FileView } from '@/types/api';
@@ -70,6 +72,10 @@ export default function FilesPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ file: FileView } | null>(null);
 
   const setUploadOpen = useUiStore((store) => store.setUploadOpen);
+  const storage = useStorageUsage();
+  const storageFull = storage.data
+    ? storage.data.remainingBytes <= 0 || storage.data.percentUsed >= 100
+    : false;
 
   const filesQuery = useFiles(page, PAGE_LIMIT);
   const removeFile = useRemoveFile();
@@ -78,7 +84,9 @@ export default function FilesPage() {
   const data = filesQuery.data;
   const files = data?.files ?? [];
   const pagination = data?.pagination;
-  const stats = useFileStats();
+  // Fetch aggregate stats after the file list is ready so the initial screen is not competing
+  // with an additional paginated request (which can be expensive for large accounts).
+  const stats = useFileStats(filesQuery.isSuccess);
   const statsData = stats.data ?? { totalCount: 0, publicCount: 0, totalSize: 0 };
 
   const filteredFiles = files.filter((file) => {
@@ -127,8 +135,9 @@ export default function FilesPage() {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     try {
+      const freedBytes = deleteTarget.file.size;
       await removeFile.mutateAsync(deleteTarget.file.id);
-      toast.success('File deleted');
+      toast.success(freedBytes > 0 ? `Freed ${formatBytes(freedBytes)} — usable now` : 'File deleted');
       setDeleteTarget(null);
     } catch (err) {
       toast.error('Could not delete file', { description: extractApiError(err).message });
@@ -162,7 +171,13 @@ export default function FilesPage() {
           <h1 className="text-xl font-semibold tracking-tight text-content sm:text-2xl">My Files</h1>
           <p className="mt-0.5 text-sm text-content-muted sm:mt-1">Securely stored, private by default. Upload and share with confidence.</p>
         </div>
-        <Button size="md" className="hidden sm:inline-flex" onClick={() => setUploadOpen(true)}>
+        <Button
+          size="md"
+          className="hidden sm:inline-flex"
+          onClick={() => setUploadOpen(true)}
+          disabled={storageFull}
+          title={storageFull ? 'Storage full — delete files to upload more' : 'Upload files'}
+        >
           <UploadCloud className="h-4 w-4" aria-hidden="true" />
           Upload files
         </Button>
@@ -188,15 +203,18 @@ export default function FilesPage() {
               <p className="truncate text-[11px] text-content-muted sm:text-xs">Public</p>
             </div>
           </div>
-          <div className="flex items-center gap-2.5 rounded-xl border border-zinc-200/80 bg-card p-2.5 shadow-card sm:p-4 sm:gap-3">
+          <Link href="/settings#storage-capacity" className="group flex items-center gap-2.5 rounded-xl border border-zinc-200/80 bg-card p-2.5 shadow-card transition-colors hover:bg-zinc-50 sm:p-4 sm:gap-3" title="View storage capacity in Settings">
             <span className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-warning sm:flex sm:h-10 sm:w-10">
-              <Lock className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
+              <HardDrive className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
             </span>
             <div className="min-w-0">
               <p className="text-[15px] font-semibold leading-tight tabular-nums text-content sm:text-lg">{formatBytes(statsData.totalSize)}</p>
-              <p className="truncate text-[11px] text-content-muted sm:text-xs">Storage</p>
+              <p className="truncate text-[11px] text-content-muted sm:text-xs">Storage capacity</p>
             </div>
-          </div>
+            <span className="ml-auto inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 text-primary transition-colors group-hover:bg-primary group-hover:text-white" aria-label="View storage capacity in Settings">
+              <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </span>
+          </Link>
         </div>
       )}
 
@@ -237,7 +255,7 @@ export default function FilesPage() {
             title="No files yet"
             description="Your secure storage is empty. Upload your first file to get started."
             action={
-              <Button onClick={() => setUploadOpen(true)}>
+              <Button onClick={() => setUploadOpen(true)} disabled={storageFull}>
                 <UploadCloud className="h-4 w-4" aria-hidden="true" />
                 Upload your first file
               </Button>

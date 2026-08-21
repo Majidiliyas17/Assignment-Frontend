@@ -5,6 +5,7 @@ import { http } from '@/lib/http';
 import { uploadToCloudinary } from '@/lib/upload';
 import type { FileView, UploadSignature } from '@/types/api';
 import type { UploadProgressCallback } from '@/lib/upload';
+import { refreshStorageUsage } from '@/hooks/useAuth';
 
 export function useUpload(onProgress: UploadProgressCallback) {
   const queryClient = useQueryClient();
@@ -49,9 +50,10 @@ export function useUpload(onProgress: UploadProgressCallback) {
       onProgress(100);
       return created;
     },
-    onSuccess: () => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['files'] });
       queryClient.invalidateQueries({ queryKey: ['file-stats'] });
+      refreshStorageUsage(queryClient);
     },
   });
 }

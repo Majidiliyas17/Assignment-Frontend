@@ -8,6 +8,7 @@ import {
   ExternalLink,
   Globe,
   Link2,
+  Maximize2,
   Pencil,
   Share2,
   Trash2,
@@ -19,7 +20,7 @@ import { FileTypeIcon } from '@/components/ui/FileTypeIcon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { filesApi } from '@/lib/files-api';
 import { extractApiError } from '@/lib/http';
-import { formatBytes, formatDate, formatRelativeTime, isPreviewableImage } from '@/lib/format';
+import { formatBytes, formatDate, formatRelativeTime, isPreviewableImage, isPreviewableVideo } from '@/lib/format';
 import type { FileView } from '@/types/api';
 
 interface FileDetailDrawerProps {
@@ -53,11 +54,14 @@ export function FileDetailDrawer({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState(false);
+  const [fullScreenPreview, setFullScreenPreview] = useState(false);
 
   const isImage = isPreviewableImage(file);
+  const isVideo = isPreviewableVideo(file);
+  const isPreviewable = isImage || isVideo;
 
   useEffect(() => {
-    if (!isImage) return;
+    if (!isPreviewable) return;
     let cancelled = false;
     setPreviewLoading(true);
     setPreviewError(false);
@@ -82,11 +86,14 @@ export function FileDetailDrawer({
     return () => {
       cancelled = true;
     };
-  }, [file.id, isImage]);
+  }, [file.id, isPreviewable]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') {
+        if (fullScreenPreview) setFullScreenPreview(false);
+        else onClose();
+      }
     };
     document.addEventListener('keydown', onKeyDown);
     document.body.style.overflow = 'hidden';
@@ -94,7 +101,7 @@ export function FileDetailDrawer({
       document.removeEventListener('keydown', onKeyDown);
       document.body.style.overflow = '';
     };
-  }, [onClose]);
+  }, [fullScreenPreview, onClose]);
 
   return createPortal(
     <div className="fixed inset-0 z-40">
@@ -129,12 +136,21 @@ export function FileDetailDrawer({
         </div>
 
         <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5 sm:px-6">
-          {isImage && (
+          {isPreviewable && (
             <div className="overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50">
               {previewLoading ? (
                 <Skeleton className="h-52 w-full rounded-none" />
               ) : previewUrl ? (
-                <img src={previewUrl} alt={file.originalName} className="h-auto max-h-72 w-full object-contain" />
+                <div className="group relative">
+                  {isImage ? (
+                    <img src={previewUrl} alt={file.originalName} className="h-auto max-h-72 w-full object-contain" />
+                  ) : (
+                    <video src={previewUrl} controls className="max-h-72 w-full bg-black" aria-label={file.originalName} />
+                  )}
+                  <button type="button" onClick={() => setFullScreenPreview(true)} className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 text-white opacity-100 transition-opacity hover:bg-black/80 sm:opacity-0 sm:group-hover:opacity-100" aria-label="Open full-screen preview">
+                    <Maximize2 className="h-4 w-4" />
+                  </button>
+                </div>
               ) : (
                 <div className="flex h-40 items-center justify-center text-sm text-content-muted">
                   {previewError ? 'Preview unavailable' : 'Loading preview…'}
@@ -222,6 +238,12 @@ export function FileDetailDrawer({
           </div>
         </div>
       </aside>
+      {fullScreenPreview && previewUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4" role="dialog" aria-modal="true" aria-label={`Full-screen preview of ${file.originalName}`}>
+          <button type="button" onClick={() => setFullScreenPreview(false)} className="absolute right-4 top-4 rounded-lg bg-white/10 px-3 py-2 text-sm text-white hover:bg-white/20">Close</button>
+          {isImage ? <img src={previewUrl} alt={file.originalName} className="max-h-full max-w-full object-contain" /> : <video src={previewUrl} controls autoPlay className="max-h-full max-w-full" aria-label={file.originalName} />}
+        </div>
+      )}
     </div>,
     document.body,
   );

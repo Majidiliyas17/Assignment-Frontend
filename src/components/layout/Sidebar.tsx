@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import { FolderOpen, PanelLeftClose, PanelLeftOpen, ShieldCheck, Settings, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserMenu } from './UserMenu';
-import { ThemeToggle } from './ThemeToggle';
 
 const NAV_ITEMS = [
   { href: '/files', label: 'My Files', icon: FolderOpen },
@@ -33,7 +32,7 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapsed }: Sidebar
       )}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-[45%] min-w-[190px] max-w-[300px] shrink-0 flex-col bg-zinc-950 text-white transition-all duration-300 ease-in-out lg:static lg:w-72 lg:min-w-0 lg:max-w-none',
+          'fixed inset-y-0 left-0 z-50 flex w-[45%] min-w-[190px] max-w-[300px] shrink-0 flex-col bg-sidebar text-sidebar-text transition-all duration-300 ease-in-out lg:static lg:w-72 lg:min-w-0 lg:max-w-none',
           collapsed ? 'lg:w-[4.5rem]' : 'lg:w-72',
           open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
         )}
@@ -50,7 +49,7 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapsed }: Sidebar
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 shadow-glow">
               <ShieldCheck className="h-5 w-5 text-white" />
             </span>
-            <span className={cn('truncate text-base font-semibold tracking-tight', collapsed && 'lg:hidden')}>SecureFiles</span>
+            <span className={cn('truncate text-base font-semibold tracking-tight text-sidebar-text', collapsed && 'lg:hidden')}>SecureFiles</span>
           </Link>
 
           <button
@@ -105,8 +104,8 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapsed }: Sidebar
                   'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150',
                   collapsed && 'lg:justify-center lg:px-0',
                   active
-                    ? 'bg-gradient-to-r from-indigo-500/20 to-violet-500/10 text-white ring-1 ring-inset ring-indigo-400/30'
-                    : 'text-sidebar-muted hover:bg-white/5 hover:text-white',
+                    ? 'bg-gradient-to-r from-indigo-500/20 to-violet-500/10 text-sidebar-text ring-1 ring-inset ring-indigo-400/30'
+                    : 'text-sidebar-muted hover:bg-black/5 hover:text-sidebar-text dark:hover:bg-white/5',
                 )}
               >
                 <item.icon
@@ -123,27 +122,6 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapsed }: Sidebar
         </nav>
 
         <div className="relative shrink-0 border-t border-white/10 p-2.5 lg:p-3">
-          <div className={cn('mb-2 hidden lg:flex', collapsed ? 'justify-center' : 'items-center gap-2')}>
-            <button
-              type="button"
-              onClick={onToggleCollapsed}
-              className={cn(
-                'inline-flex items-center gap-2 rounded-lg text-sidebar-muted transition-colors hover:bg-white/10 hover:text-white',
-                collapsed ? 'p-1.5' : 'px-2 py-1.5',
-              )}
-              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              {collapsed ? (
-                <PanelLeftOpen className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <>
-                  <PanelLeftClose className="h-4 w-4" aria-hidden="true" />
-                  <span className="text-xs">Collapse</span>
-                </>
-              )}
-            </button>
-            <ThemeToggle variant="chrome" />
-          </div>
           <UserMenu collapsed={collapsed} />
         </div>
       </aside>

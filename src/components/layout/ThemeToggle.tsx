@@ -27,7 +27,7 @@ export function ThemeToggle({ variant = 'surface', className }: ThemeToggleProps
       className={cn(
         'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors',
         variant === 'chrome'
-          ? 'text-sidebar-muted hover:bg-white/10 hover:text-white'
+          ? 'text-content-muted hover:bg-zinc-100 hover:text-content'
           : 'text-content-muted hover:bg-zinc-100 hover:text-content',
         className,
       )}

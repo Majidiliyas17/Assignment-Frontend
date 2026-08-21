@@ -2,14 +2,16 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { BadgeCheck, CircleDashed, Database, FileKey2, Globe2, Mail, ShieldCheck, User } from 'lucide-react';
+import { BadgeCheck, CircleDashed, Database, FileKey2, Globe2, HardDrive, Mail, ShieldCheck, User } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { http } from '@/lib/http';
-import { useLogout, useMe } from '@/hooks/useAuth';
+import { useLogout, useMe, useStorageUsage } from '@/hooks/useAuth';
+import { formatBytes } from '@/lib/format';
 
 export default function SettingsPage() {
   const { data: user, isLoading } = useMe();
+  const storage = useStorageUsage();
   const logout = useLogout();
 
   const health = useQuery({
@@ -112,6 +114,40 @@ export default function SettingsPage() {
           </div>
         </Card>
       </div>
+
+      <Card id="storage-capacity" className="scroll-mt-24">
+        <div className="border-b border-zinc-100 px-5 py-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-primary">
+              <HardDrive className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <div>
+              <h3 className="text-sm font-semibold tracking-tight text-content">Storage capacity</h3>
+              <p className="text-xs text-content-muted">Your current storage usage and remaining space.</p>
+            </div>
+          </div>
+        </div>
+        <div className="p-5">
+          {storage.isLoading ? (
+            <div className="space-y-3"><Skeleton className="h-5 w-48" /><Skeleton className="h-2 w-full" /></div>
+          ) : storage.data ? (
+            <>
+              <div className="flex flex-wrap items-end justify-between gap-2">
+                <p className="text-lg font-semibold tabular-nums text-content">
+                  {formatBytes(storage.data.usedBytes)} <span className="text-sm font-normal text-content-muted">of {formatBytes(storage.data.quotaBytes)} used</span>
+                </p>
+                <p className="text-sm font-medium text-content-muted">{formatBytes(storage.data.remainingBytes)} left</p>
+              </div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-100">
+                <div className="h-full rounded-full bg-primary transition-[width] duration-300" style={{ width: `${Math.min(100, Math.max(0, storage.data.percentUsed))}%` }} />
+              </div>
+              <p className="mt-2 text-xs text-content-muted">{Math.round(storage.data.percentUsed)}% of your capacity is in use.</p>
+            </>
+          ) : (
+            <p className="text-sm text-content-muted">Storage information is unavailable right now.</p>
+          )}
+        </div>
+      </Card>
 
       <Card className="border-red-100">
         <div className="flex flex-col gap-3 border-b border-red-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
