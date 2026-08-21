@@ -26,7 +26,7 @@ export default async function SharedFilePage({ params }: SharedFilePageProps) {
 
   try {
     const data = await apiGet<PublicShareResult>(`/share/${shareToken}`);
-    return <PublicFileView file={data.file} downloadUrl={`/api/share/${shareToken}/download`} />;
+    return <PublicFileView file={data.file} downloadUrl={`/api/share/${shareToken}/download`} previewUrl={data.downloadUrl} />;
   } catch (err) {
     if (err instanceof ApiError && err.code === 'SHARE_NOT_FOUND') {
       return <ShareNotFound />;

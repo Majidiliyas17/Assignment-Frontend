@@ -1,8 +1,16 @@
+export interface StorageUsage {
+  usedBytes: number;
+  quotaBytes: number;
+  remainingBytes: number;
+  percentUsed: number;
+}
+
 export interface SafeUser {
   id: string;
   name: string;
   email: string;
   createdAt: string;
+  storage: StorageUsage;
 }
 
 export interface AuthResult {

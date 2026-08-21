@@ -50,6 +50,14 @@ export function isPreviewableImage(file: {
   return file.resourceType === 'image' && /^image\//.test(file.mimeType);
 }
 
+export function isPreviewableVideo(file: {
+  mimeType: string;
+  resourceType: string;
+  extension: string;
+}): boolean {
+  return file.resourceType === 'video' && /^video\//.test(file.mimeType);
+}
+
 export function extensionToLabel(extension: string): string {
   return extension ? extension.toUpperCase() : 'FILE';
 }

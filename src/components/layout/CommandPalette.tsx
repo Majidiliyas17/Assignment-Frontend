@@ -4,9 +4,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { FolderOpen, Search, Settings2, UploadCloud } from 'lucide-react';
 import { FileTypeIcon } from '@/components/ui/FileTypeIcon';
 import { useUiStore } from '@/stores/ui';
+import { useStorageUsage } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import type { FileView, PaginatedFiles } from '@/types/api';
 
@@ -33,6 +35,10 @@ export function CommandPalette() {
   const setUploadOpen = useUiStore((store) => store.setUploadOpen);
   const router = useRouter();
   const queryClient = useQueryClient();
+  const storage = useStorageUsage();
+  const storageFull = storage.data
+    ? storage.data.remainingBytes <= 0 || storage.data.percentUsed >= 100
+    : false;
 
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
@@ -73,9 +79,13 @@ export function CommandPalette() {
     const base: PaletteAction[] = [
       {
         id: 'upload',
-        label: 'Upload a file',
+        label: storageFull ? 'Storage full — delete files to upload more' : 'Upload a file',
         hint: 'Action',
         onSelect: () => {
+          if (storageFull) {
+            toast.error('Storage full — delete files to upload more');
+            return;
+          }
           setUploadOpen(true);
           setOpen(false);
         },
@@ -122,7 +132,7 @@ export function CommandPalette() {
       }));
 
     return [...matchingBase, ...matchingFiles];
-  }, [query, files, router, setOpen, setUploadOpen]);
+  }, [query, files, router, setOpen, setUploadOpen, storageFull, storage]);
 
   useEffect(() => {
     setActive(0);
